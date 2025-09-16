@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🍪 Печеньковая ферма</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; min-height: 100vh; }
+        .container { max-width: 400px; margin: 0 auto; background: rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        h1 { text-align: center; margin-bottom: 20px; font-size: 24px; }
+        .cookie { font-size: 80px; text-align: center; margin: 15px 0; cursor: pointer; transition: transform 0.2s; user-select: none; }
+        .cookie:active { transform: scale(0.9); }
+        .stats { background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 15px; margin: 15px 0; }
+        .stat-row { display: flex; justify-content: space-between; margin: 8px 0; }
+        .btn { background: rgba(255, 255, 255, 0.2); color: white; border: 2px solid white; padding: 12px 20px; border-radius: 25px; margin: 8px 0; width: 100%; font-size: 16px; cursor: pointer; transition: all 0.3s; }
+        .btn:hover { background: rgba(255, 255, 255, 0.3); }
+        .btn-admin { background: rgba(255, 0, 0, 0.3); border-color: #ff4444; }
+        .btn-legendary { background: linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #ff9ff3 100%); color: black; border: 2px solid #feca57; font-weight: bold; animation: glow 2s infinite alternate; }
+        @keyframes glow { from { box-shadow: 0 0 10px #feca57; } to { box-shadow: 0 0 20px #ff6b6b, 0 0 30px #ff9ff3; } }
+        .section { margin: 20px 0; }
+        .shop-item { background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 15px; margin: 10px 0; }
+        .admin-panel { background: rgba(255, 0, 0, 0.1); padding: 15px; border-radius: 15px; margin: 15px 0; border: 2px solid #ff4444; }
+        .hidden { display: none; }
+        .tab-button { background: rgba(255, 255, 255, 0.1); border: none; color: white; padding: 10px; margin: 5px; border-radius: 10px; cursor: pointer; }
+        .tab-button.active { background: rgba(255, 255, 255, 0.3); }
+        .legendary-effect { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; animation: rainbowBg 3s; }
+        @keyframes rainbowBg { 0% { background: rgba(255, 107, 107, 0.3); } 25% { background: rgba(254, 202, 87, 0.3); } 50% { background: rgba(113, 201, 206, 0.3); } 75% { background: rgba(159, 255, 243, 0.3); } 100% { background: transparent; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍪 Печеньковая ферма</h1>
+        <div class="cookie" onclick="collectCookies()">🍪</div>
+        <div class="stats">
+            <div class="stat-row"><span>Печенек:</span><strong id="cookies">0</strong></div>
+            <div class="stat-row"><span>Буст:</span><strong id="boost">x1</strong></div>
+            <div class="stat-row"><span>До сбора:</span><strong id="timer">0:00</strong></div>
+        </div>
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('main')">Основное</button>
+            <button class="tab-button" onclick="showTab('shop')">Магазин</button>
+            <button class="tab-button hidden" id="admin-tab-btn" onclick="showTab('admin')">Админ</button>
+        </div>
+        <div id="tab-main" class="section">
+            <button class="btn" onclick="collectCookies()">Собрать печеньки</button>
+            <button class="btn" onclick="showProfile()">Мой профиль</button>
+        </div>
+        <div id="tab-shop" class="section hidden">
+            <div class="shop-item"><h3>🛠️ Удобная лопата</h3><p>+1 к сбору за раз</p><p>Цена: 50 печенек</p><button class="btn" onclick="buyBoost(1, 50)">Купить</button></div>
+            <div class="shop-item"><h3>⚡ Золотая лопата</h3><p>+5 к сбору за раз</p><p>Цена: 200 печенек</p><button class="btn" onclick="buyBoost(5, 200)">Купить</button></div>
+            <div class="shop-item"><h3>🚀 Супербуст</h3><p>Удвоение всего сбора!</p><p>Цена: 500 печенек</p><button class="btn" onclick="buyMultiplier(2, 500)">Купить</button></div>
+        </div>
+        <div id="tab-admin" class="section hidden">
+            <div class="admin-panel">
+                <h3>⚙️ Панель администратора</h3>
+                <button class="btn btn-admin" onclick="addCookies(100)">+100 печенек</button>
+                <button class="btn btn-admin" onclick="addCookies(1000)">+1000 печенек</button>
+                <button class="btn btn-admin" onclick="setBoost(10)">Буст x10</button>
+                <button class="btn btn-admin" onclick="setBoost(100)">Буст x100</button>
+                <button class="btn btn-legendary" onclick="unlockLegendaryShovel()">🚀 АКТИВИРОВАТЬ ЛЕГЕНДАРНУЮ ЛОПАТУ</button>
+                <button class="btn btn-admin" onclick="resetCooldown()">Сбросить время</button>
+                <button class="btn btn-admin" onclick="resetGame()">Новая игра</button>
+                <p style="margin-top: 15px; font-size: 12px; opacity: 0.7;">User ID: <span id="user-id"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_ID = '6355199863'; // ЗАМЕНИТЕ НА СВОЙ ID!
+        let playerData = { cookies: 0, boost: 1, lastCollect: 0, totalEarned: 0, hasLegendaryShovel: false };
+
+        function getTelegramUserId() {
+            if (Telegram.WebApp.initDataUnsafe?.user) return Telegram.WebApp.initDataUnsafe.user.id.toString();
+            return new URLSearchParams(window.location.search).get('user_id') || 'unknown';
+        }
+
+        function isAdmin() { return getTelegramUserId() === ADMIN_ID; }
+
+        function checkAdminRights() {
+            if (isAdmin()) {
+                document.getElementById('admin-tab-btn').classList.remove('hidden');
+                document.getElementById('user-id').textContent = getTelegramUserId();
+            } else {
+                document.getElementById('admin-tab-btn').classList.add('hidden');
+                document.getElementById('tab-admin').classList.add('hidden');
+            }
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('cookieData');
+            if (saved) {
+                playerData = JSON.parse(saved);
+                if (playerData.hasLegendaryShovel) upgradeToLegendary();
+            }
+            updateDisplay();
+        }
+
+        function saveData() { localStorage.setItem('cookieData', JSON.stringify(playerData)); }
+
+        function unlockLegendaryShovel() {
+            if (!isAdmin()) return alert('❌ Недостаточно прав!');
+            if (playerData.hasLegendaryShovel) return alert('🚀 Легендарная лопата уже активирована!');
+            
+            const effect = document.createElement('div');
+            effect.className = 'legendary-effect';
+            document.body.appendChild(effect);
+            setTimeout(() => document.body.removeChild(effect), 3000);
+            
+            playerData.hasLegendaryShovel = true;
+            playerData.boost = 1000;
+            upgradeToLegendary();
+            saveData();
+            updateDisplay();
+            
+            setTimeout(() => alert(`✨ ЛЕГЕНДАРНАЯ ЛОПАТА АКТИВИРОВАНА!\n\n🚀 Буст: x1000\n🌟 Печенька превратилась в звезду!\n💫 Теперь собираешь по ${10 * 1000} печенек за раз!`), 1000);
+        }
+
+        function upgradeToLegendary() {
+            const cookie = document.querySelector('.cookie');
+            cookie.textContent = '🌟';
+            cookie.style.fontSize = '100px';
+            cookie.style.textShadow = '0 0 20px gold';
+        }
+
+        function collectCookies() {
+            const now = Date.now();
+            const cooldown = 2 * 60 * 60 * 1000;
+            if (now - playerData.lastCollect < cooldown) {
+                updateTimer();
+                return alert('⏳ Еще рано! Подожди немного.');
+            }
+
+            let reward = 10 * playerData.boost;
+            if (playerData.hasLegendaryShovel) reward *= 2;
+
+            playerData.cookies += reward;
+            playerData.totalEarned += reward;
+            playerData.lastCollect = now;
+            saveData();
+            updateDisplay();
+            
+            const cookie = document.querySelector('.cookie');
+            if (playerData.hasLegendaryShovel) {
+                cookie.style.transform = 'scale(1.5) rotate(360deg)';
+                setTimeout(() => cookie.style.transform = 'scale(1) rotate(0deg)', 500);
+            } else {
+                cookie.style.transform = 'scale(1.2)';
+                setTimeout(() => cookie.style.transform = 'scale(1)', 200);
+            }
+            
+            alert(`🎉 +${reward} печенек!`);
+        }
+
+        function buyBoost(amount, price) {
+            if (playerData.cookies >= price) {
+                playerData.cookies -= price;
+                playerData.boost += amount;
+                saveData();
+                updateDisplay();
+                alert(`✅ Куплено! Буст увеличен на +${amount}`);
+            } else {
+                alert('❌ Недостаточно печенек!');
+            }
+        }
+
+        function buyMultiplier(multiplier, price) {
+            if (playerData.cookies >= price) {
+                playerData.cookies -= price;
+                playerData.boost *= multiplier;
+                saveData();
+                updateDisplay();
+                alert(`✅ Куплено! Буст умножен на x${multiplier}`);
+            } else {
+                alert('❌ Недостаточно печенек!');
+            }
+        }
+
+        function addCookies(amount) {
+            if (!isAdmin()) return alert('❌ Недостаточно прав!');
+            playerData.cookies += amount;
+            saveData();
+            updateDisplay();
+            alert(`✅ Добавлено ${amount} печенек!`);
+        }
+
+        function setBoost(boostValue) {
+            if (!isAdmin()) return alert('❌ Недостаточно прав!');
+            playerData.boost = boostValue;
+            saveData();
+            updateDisplay();
+            alert(`✅ Буст установлен на x${boostValue}`);
+        }
+
+        function resetCooldown() {
+            if (!isAdmin()) return alert('❌ Недостаточно прав!');
+            playerData.lastCollect = 0;
+            saveData();
+            updateDisplay();
+            alert('✅ Время сброшено! Можно собирать.');
+        }
+
+        function resetGame() {
+            if (!isAdmin()) return alert('❌ Недостаточно прав!');
+            if (confirm('⚠️ ТОЧНО НАЧАТЬ ЗАНОВО? Все прогресс будет потерян!')) {
+                playerData = { cookies: 0, boost: 1, lastCollect: 0, totalEarned: 0, hasLegendaryShovel: false };
+                const cookie = document.querySelector('.cookie');
+                cookie.textContent = '🍪';
+                cookie.style.fontSize = '80px';
+                cookie.style.textShadow = 'none';
+                saveData();
+                updateDisplay();
+                alert('🔄 Игра сброшена!');
+            }
+        }
+
+        function showProfile() {
+            alert(`👤 ВАШ ПРОФИЛЬ:\n\n🍪 Печенек: ${playerData.cookies}\n⚡ Буст: x${playerData.boost}\n📊 Всего собрано: ${playerData.totalEarned}${playerData.hasLegendaryShovel ? '\n🌟 Легендарная лопата: АКТИВИРОВАНА!' : ''}`);
+        }
+
+        function updateDisplay() {
+            document.getElementById('cookies').textContent = playerData.cookies;
+            document.getElementById('boost').textContent = 'x' + playerData.boost;
+            if (playerData.hasLegendaryShovel) {
+                document.getElementById('boost').innerHTML = 'x1000 <span style="color:gold">🌟</span>';
+            }
+            updateTimer();
+        }
+
+        function updateTimer() {
+            const now = Date.now();
+            const cooldown = 2 * 60 * 60 * 1000;
+            const remaining = cooldown - (now - playerData.lastCollect);
+            const timer = document.getElementById('timer');
+            if (remaining > 0) {
+                const hours = Math.floor(remaining / (1000 * 60 * 60));
+                const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                timer.textContent = `${hours}ч ${minutes}м`;
+            } else {
+                timer.textContent = '0:00';
+            }
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.section').forEach(tab => tab.classList.add('hidden'));
+            document.getElementById('tab-' + tabName).classList.remove('hidden');
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // Инициализация
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+        loadData();
+        checkAdminRights();
+        setInterval(updateTimer, 60000);
+    </script>
+</body>
+</html>
